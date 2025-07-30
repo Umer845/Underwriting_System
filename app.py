@@ -251,13 +251,13 @@ def run_app():
                         risk_level = cur.fetchone()[0]
 
                         if risk_level == "Low":
-                            base_premium_rate += base_premium_rate * 0.10
+                            base_premium_rate += base_premium_rate + 0.10
                         elif risk_level == "Low to Moderate":
-                            base_premium_rate += base_premium_rate * 0.15
+                            base_premium_rate += base_premium_rate + 0.15
                         elif risk_level == "Moderate to High":
-                            base_premium_rate += base_premium_rate * 0.30
+                            base_premium_rate += base_premium_rate + 0.30
                         elif risk_level == "High":
-                            base_premium_rate += base_premium_rate * 0.50
+                            base_premium_rate += base_premium_rate + 0.50
 
                         st.info(f"""
                         **2020–2024 Average Data:**
