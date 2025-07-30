@@ -115,7 +115,6 @@ def run_app():
             if row and row[0] is not None and row[1] is not None:
                 avg_no_of_claims, avg_vehicle_capacity = row
 
-                # Scores
                 if driver_age < 25:
                     age_score = 1.0
                 elif 25 <= driver_age <= 35:
@@ -211,4 +210,123 @@ def run_app():
         if 'risk_id' not in st.session_state:
             st.warning("⚠️ Please calculate risk profile first.")
         else:
-            st.write("✅ Put your Premium Calculation logic here.")
+            make_name = st.text_input("Make Name", key="premium_make")
+            sub_make_name = st.text_input("Sub Make Name", key="premium_sub_make")
+            model_year = st.number_input("Model Year", min_value=1990, max_value=2035, key="premium_year")
+
+            if st.button("Calculate Premium", key="calc_premium"):
+                if model_year == 2025:
+                    cur.execute("""
+                        WITH years AS (
+                            SELECT 2020 AS year UNION ALL
+                            SELECT 2021 UNION ALL
+                            SELECT 2022 UNION ALL
+                            SELECT 2023 UNION ALL
+                            SELECT 2024
+                        ),
+                        yearly_sums AS (
+                            SELECT
+                                y.year,
+                                COALESCE(SUM(vi.suminsured), 0) AS total_suminsured,
+                                COALESCE(SUM(vi.netpremium), 0) AS total_netpremium
+                            FROM years y
+                            LEFT JOIN vehicle_inspection vi
+                                ON vi.model_year = y.year
+                                AND upper(vi.make_name) = %s
+                                AND upper(vi.sub_make_name) = %s
+                            GROUP BY y.year
+                        )
+                        SELECT
+                            SUM(total_suminsured)::FLOAT / 4 AS avg_suminsured,
+                            SUM(total_netpremium)::FLOAT / 4 AS avg_netpremium
+                        FROM yearly_sums
+                    """, (make_name.upper(), sub_make_name.upper()))
+                    row = cur.fetchone()
+                    if row and row[0] is not None and row[1] is not None:
+                        avg_suminsured, avg_netpremium = row
+
+                        base_premium_rate = (avg_netpremium / avg_suminsured) * 100
+
+                        cur.execute("SELECT risk_level FROM vehicle_risk WHERE id = %s", (st.session_state['risk_id'],))
+                        risk_level = cur.fetchone()[0]
+
+                        if risk_level == "Low":
+                            base_premium_rate += base_premium_rate * 0.10
+                        elif risk_level == "Low to Moderate":
+                            base_premium_rate += base_premium_rate * 0.15
+                        elif risk_level == "Moderate to High":
+                            base_premium_rate += base_premium_rate * 0.30
+                        elif risk_level == "High":
+                            base_premium_rate += base_premium_rate * 0.50
+
+                        st.info(f"""
+                        **2020–2024 Average Data:**
+                        - Average Sum Insured: {avg_suminsured:.2f}
+                        - Average Net Premium: {avg_netpremium:.2f}
+                        - Risk Level: {risk_level}
+                        """)
+
+                        st.success(f"💰 Estimated 2025 Premium Rate: {base_premium_rate:.2f}%")
+
+                        cur.execute("""
+                            UPDATE vehicle_risk
+                            SET premium_rate = %s
+                            WHERE id = %s
+                        """, (base_premium_rate, st.session_state['risk_id']))
+                        conn.commit()
+                        st.success("✅ Premium saved to vehicle_risk.")
+                    else:
+                        st.error("No valid data for 2020–2024 for this make/submake!")
+
+                else:
+                    cur.execute("""
+                        SELECT suminsured, netpremium, tracker_id
+                        FROM vehicle_inspection
+                        WHERE upper(make_name) = %s
+                        AND upper(sub_make_name) = %s
+                        AND model_year = %s
+                        ORDER BY id DESC LIMIT 1
+                    """, (make_name.upper(), sub_make_name.upper(), model_year))
+                    row = cur.fetchone()
+
+                    if row:
+                        suminsured, netpremium, tracker_id = row
+
+                        cur.execute("SELECT risk_level FROM vehicle_risk WHERE id = %s", (st.session_state['risk_id'],))
+                        risk_level = cur.fetchone()[0]
+
+                        premium_rate_percent = (netpremium / suminsured) * 100
+
+                        if risk_level == "Low":
+                            premium_rate_percent += premium_rate_percent * 0.10
+                        elif risk_level == "Low to Moderate":
+                            premium_rate_percent += premium_rate_percent * 0.15
+                        elif risk_level == "Moderate to High":
+                            premium_rate_percent += premium_rate_percent * 0.30
+                        elif risk_level == "High":
+                            premium_rate_percent += premium_rate_percent * 0.50
+
+                        if tracker_id and tracker_id > 0:
+                            premium_rate_percent += premium_rate_percent * 0.05
+                        else:
+                            premium_rate_percent += premium_rate_percent * 0.10
+
+                        st.info(f"""
+                        **Fetched Data:**
+                        - Sum Insured: {suminsured}
+                        - Net Premium: {netpremium}
+                        - Tracker ID: {tracker_id}
+                        - Risk Level: {risk_level}
+                        """)
+
+                        st.success(f"💰 Final Premium Rate: {premium_rate_percent:.2f}%")
+
+                        cur.execute("""
+                            UPDATE vehicle_risk
+                            SET premium_rate = %s
+                            WHERE id = %s
+                        """, (premium_rate_percent, st.session_state['risk_id']))
+                        conn.commit()
+                        st.success("✅ Premium saved to vehicle_risk.")
+                    else:
+                        st.error("No inspection data found!")
