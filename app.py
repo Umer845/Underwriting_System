@@ -32,6 +32,10 @@ def run_app():
     if st.sidebar.button("Premium Calculation", key="nav_premium"):
         st.session_state['active_page'] = "Premium Calculation"
 
+        # =============================
+        # 🔍 Search + Next Block
+        # =============================
+        
     # ---- Pages ----
     if st.session_state['active_page'] == "Upload File":
         st.subheader("Upload Vehicle Data")
@@ -77,6 +81,14 @@ def run_app():
 
                 st.session_state['pdf_context'] = text
                 st.success("✅ PDF uploaded and context saved for Q&A!")
+
+        # =============================
+        # 🔍 END Search + Next Block
+        # =============================
+
+    # ====================================
+    # 🚦Risk Assesment Block (SAFE ✅)
+    # ====================================
 
     elif st.session_state['active_page'] == "Risk Profile":
         st.subheader("Calculate Risk Profile")
@@ -204,6 +216,15 @@ def run_app():
             else:
                 st.error("No matching data found with claims > 0!")
 
+    # ==========================================
+    # 🚦 END Risk Assesment Block (SAFE ✅)
+    # ==========================================
+    
+
+    # ===================================
+    # 🚗 Premium Rate Block (SAFE ✅)
+    # ===================================
+
     elif st.session_state['active_page'] == "Premium Calculation":
         st.subheader("Calculate Premium")
 
@@ -330,3 +351,8 @@ def run_app():
                         st.success("✅ Premium saved to vehicle_risk.")
                     else:
                         st.error("No inspection data found!")
+
+        # ========================================
+        # 🚗 END Premium Rate Block (SAFE ✅)
+        # ========================================
+
