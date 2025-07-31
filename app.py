@@ -32,10 +32,10 @@ def run_app():
     if st.sidebar.button("Premium Calculation", key="nav_premium"):
         st.session_state['active_page'] = "Premium Calculation"
 
-        # =============================
-        # 🔍 Search + Next Block
-        # =============================
-        
+    # ==========================
+    # 🔍 Search + Next Block
+    # ==========================
+
     # ---- Pages ----
     if st.session_state['active_page'] == "Upload File":
         st.subheader("Upload Vehicle Data")
@@ -86,9 +86,9 @@ def run_app():
         # 🔍 END Search + Next Block
         # =============================
 
-    # ====================================
-    # 🚦Risk Assesment Block (SAFE ✅)
-    # ====================================
+        # ====================================
+        # 🚦Risk Assesment Block (SAFE ✅)
+        # ====================================
 
     elif st.session_state['active_page'] == "Risk Profile":
         st.subheader("Calculate Risk Profile")
