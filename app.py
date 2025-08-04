@@ -174,7 +174,7 @@ def run_app():
 
                 st.info(f"""
                 **Fetched Data:**
-                - Average Vehicle Capacity: {avg_vehicle_capacity:.2f}
+                - Vehicle Capacity: {avg_vehicle_capacity:.2f}
                 - Average Number of Claims: {avg_no_of_claims:.2f}
 
                 **Risk Scores:**
